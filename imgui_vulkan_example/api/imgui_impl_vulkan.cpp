@@ -945,6 +945,26 @@ void ImGui_ImplVulkanH_CreateWindowDataSwapChainAndFramebuffer(VkPhysicalDevice 
     if (old_swapchain)
         vkDestroySwapchainKHR(device, old_swapchain, allocator);
 
+	// Create The Image Views
+	{
+		VkImageViewCreateInfo info = {};
+		info.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+		info.viewType = VK_IMAGE_VIEW_TYPE_2D;
+		info.format = wd->SurfaceFormat.format;
+		info.components.r = VK_COMPONENT_SWIZZLE_R;
+		info.components.g = VK_COMPONENT_SWIZZLE_G;
+		info.components.b = VK_COMPONENT_SWIZZLE_B;
+		info.components.a = VK_COMPONENT_SWIZZLE_A;
+		VkImageSubresourceRange image_range = { VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1 };
+		info.subresourceRange = image_range;
+		for (uint32_t i = 0; i < wd->BackBufferCount; i++)
+		{
+			info.image = wd->BackBuffer[i];
+			err = vkCreateImageView(device, &info, allocator, &wd->BackBufferView[i]);
+			check_vk_result(err);
+		}
+	}
+
     // Create the Render Pass
     {
         VkAttachmentDescription attachment = {};
@@ -980,26 +1000,6 @@ void ImGui_ImplVulkanH_CreateWindowDataSwapChainAndFramebuffer(VkPhysicalDevice 
         info.pDependencies = &dependency;
         err = vkCreateRenderPass(device, &info, allocator, &wd->RenderPass);
         check_vk_result(err);
-    }
-
-    // Create The Image Views
-    {
-        VkImageViewCreateInfo info = {};
-        info.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
-        info.viewType = VK_IMAGE_VIEW_TYPE_2D;
-        info.format = wd->SurfaceFormat.format;
-        info.components.r = VK_COMPONENT_SWIZZLE_R;
-        info.components.g = VK_COMPONENT_SWIZZLE_G;
-        info.components.b = VK_COMPONENT_SWIZZLE_B;
-        info.components.a = VK_COMPONENT_SWIZZLE_A;
-        VkImageSubresourceRange image_range = { VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1 };
-        info.subresourceRange = image_range;
-        for (uint32_t i = 0; i < wd->BackBufferCount; i++)
-        {
-            info.image = wd->BackBuffer[i];
-            err = vkCreateImageView(device, &info, allocator, &wd->BackBufferView[i]);
-            check_vk_result(err);
-        }
     }
 
     // Create Framebuffer
